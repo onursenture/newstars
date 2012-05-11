@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <meta charset="utf-8">
+    <title>NewStars - Registration</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <!-- Le styles -->
+    <link href="/index/css/bootstrap.css" rel="stylesheet">
+     <link href="/index/css/bootstrap-responsive.css" rel="stylesheet">
+
+            <!-- Le HTML5 shim, for IE6-8 support of HTML5 elements -->
+            <!--[if lt IE 9]>
+              <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+            <![endif]-->
+
+            <!-- Le fav and touch icons -->
+            <link rel="shortcut icon" href="http://twitter.github.com/bootstrap/assets/ico/favicon.ico">
+            <link rel="apple-touch-icon-precomposed" sizes="144x144" href="http://twitter.github.com/bootstrap/assets/ico/apple-touch-icon-144-precomposed.png">
+            <link rel="apple-touch-icon-precomposed" sizes="114x114" href="http://twitter.github.com/bootstrap/assets/ico/apple-touch-icon-114-precomposed.png">
+            <link rel="apple-touch-icon-precomposed" sizes="72x72" href="http://twitter.github.com/bootstrap/assets/ico/apple-touch-icon-72-precomposed.png">
+            <link rel="apple-touch-icon-precomposed" href="http://twitter.github.com/bootstrap/assets/ico/apple-touch-icon-57-precomposed.png">
+    <style type="text/css">
+      td {
+                white-space: pre-wrap; /* css-3 */
+                white-space: -moz-pre-wrap !important; /* Mozilla, since 1999 */
+                white-space: -pre-wrap; /* Opera 4-6 */
+                white-space: -o-pre-wrap; /* Opera 7 */
+                word-wrap: break-word; /* Internet Explorer 5.5+ */
+      }
+      tr:hover{}
+      td:hover {
+        opacity: 0.7;
+      }
+      i:hover{
+        opacity: 0.5;
+      }
+      body {
+        padding-top: 60px;
+        padding-bottom: 40px;
+        user-select: none;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+      }
+              .sidebar-nav {
+                padding: 9px 0;
+              }
+    </style>
+           
+    <script type="text/javascript">
+
+            colors = ['#b1ddf3','#facc30','#e3675c','#c2d985','#ffde89','#ea9135'];
+            var sections;
+            reqSent = 0;
+            elem = -1;    
+    
+    function asyncmapper(colored)
+	{
+	  var i = 0;
+	  var c = 0;
+      var j = 0;
+      if(sections!=null){
+        for(n in sections)
+        {
+          sc = $.parseJSON(sections[n]);
+          j = 0;
+          for(j in sc)
+          {
+            p = sc[j];
+            for(k=0;k<p.fields.duration;k++)
+            {
+              full = $('#cell'+(parseInt(p.fields.hour)+k-1)+''+p.fields.day); 
+              if(colored) full.css({'background-color':colors[c]});
+              if(!colored) full.css({'background-color':'#cccccc'});
+              full.html(n+'<span style="font-size:10px;"> @ '+p.fields.room+'</span>');
+            }
+          }
+          c++;
+          i++;
+        }
+      }
+	}
+
+    function demap(e)
+    {
+      for(i=0;i<8;i++)
+        for(j=0;j<13;j++)
+        {
+          full = $('#cell'+j+''+i); 
+	        full.html('');
+	        full.css({'background-color':'#eeeeee'});
+        }
+      reqSent=0;
+      e.preventDefault();
+    }
+
+
+
+    function getSections(refresh){
+    
+        $.ajax({url:'/index/section/getmap/',method:'get',complete:
+            function(data){
+            sections = $.parseJSON(data.responseText);
+            if(refresh)
+            {
+              for(i=0;i<8;i++)
+                for(j=0;j<13;j++)
+                {
+                  full = $('#cell'+j+''+i); 
+  	             full.html('');
+  	             full.css({'background-color':'#eeeeee'});
+                }
+              reqSent=0;
+              asyncmapper(true);
+            }
+        }});
+    }
+
+	function mapper(colored)
+	{
+	  var i = 0;
+	  var c = 0;
+	  {% for k, v in sections.iteritems %}
+		{% for u in v%}
+	    for(i=0;i<{{u.duration}};i++)
+	    {
+	      full = $('#cell'+((parseInt({{u.hour}})+i-1)+'{{u.day}}')); 
+	      full.html('{{k}}'+'<span style="font-size:10px;"> @ {{u.room}}</span>');
+	      if(colored) full.css({'background-color':colors[c]});
+	      if(!colored) full.css({'background-color':'#cccccc'});
+          full.click(function(){show_course('{{k}}');})
+	    }
+		{% endfor %}
+		c++;
+	  {% endfor %}
+      getSections();
+      $('.btn').tooltip();
+	}
+
+    function remap(e,colored)
+    {
+      if(!reqSent)
+      {
+        e.preventDefault();
+        sec = e.dataTransfer.getData("Text");
+        $.ajax({url:'/index/section/remap/'+elem+'/',method:'get',complete:
+          function(data){
+            m = $.parseJSON(data.responseText);
+            if(m!=null){
+              asyncmapper(colored);
+              for(i=0;i<m.meets.length;i++)
+               {
+                 sc = m.meets[i];
+                 for(j=0;j<sc.fields.duration;j++)
+                 {
+                   full = $('#cell'+((parseInt(sc.fields.hour)+j-1)+''+sc.fields.day)); 
+	                 if(full.html()!='')
+                     full.css({'background-color':'#b94a48'});
+                   else
+                     full.css({'background-color':'#468847'});
+	                 full.html(m.cCode+'<span style="font-size:10px;"> @ '+sc.fields.room+'</span>');
+                 }
+               }
+            }
+          }
+        });
+        reqSent=1;
+      }
+    }
+
+    
+    function drag(e,id)
+    { 
+      e.dataTransfer.effectAllowed = 'move';
+      elem = id;
+      e.dataTransfer.setData("Text",id);
+      e.dataTransfer.setDragImage(e.target, 20, 10);
+      return true;
+    }
+
+    function addSection(e)
+    {
+      e.stopPropagation();
+      $.ajax({url:'/index/section/add/'+elem+'/',complete: function(d){getSections(true);},success: function(d){
+                course = $('#S'+elem).attr('alt');
+                $('.'+course).removeClass('btn-info').addClass('btn-success').attr('draggable',true);
+                $('#S'+elem).removeClass('btn-success').addClass('btn-info').attr('draggable',false).attr('alt');
+                $('.'+course+'-remove').fadeOut('fast');
+                $('#S'+elem+'remove').fadeIn('fast');
+             }
+      });
+
+      e.preventDefault();
+    }
+
+    function dropSection(e,f)
+    {
+      e.stopPropagation();
+      $.ajax({url:'/index/section/drop/'+f+'/',complete: function(d){
+                getSections(true);
+                $('#S'+f+'remove').fadeOut('fast');
+                $('#S'+f).removeClass('btn-info').addClass('btn-success').attr('draggable',true);
+             }
+      });
+
+      e.preventDefault();
+    }
+
+
+	</script>
+	
+  </head>
+
+  <body onload="mapper(true);">
+    <div class="navbar navbar-fixed-top">
+      <div class="navbar-inner">
+        <div class="container-fluid">
+          <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </a>
+          <a class="brand" href="#">NewStars</a>
+          <div class="btn-group pull-right">
+            <a class="btn return false;dropdown-toggle" data-toggle="dropdown" href="#">
+              <i class="icon-user"></i> {{student.name}}&nbsp;{{student.surname}}
+              <span class="caret"></span>
+            </a>
+            <ul class="dropdown-menu">
+              <!--<li><a href="#">Profile</a></li>
+              <li class="divider"></li>-->
+              <li><a href="/index/logout/">Sign Out</a></li>
+            </ul>
+          </div>
+          <div class="nav-collapse">
+            <ul class="nav">
+              <li><a href="/index/">Home</a></li>
+              <li><a href="/index/transcript/">Transcript</a></li>
+              <li class="active"><a href="/index/register/">Registration</a></li>
+            </ul>
+          </div><!--/.nav-collapse -->
+        </div>
+      </div>
+    </div>
+
+    <div class="container-fluid">
+      <div class="row-fluid">
+        <div class="span3">
+          <div class="well sidebar-nav" style="text-align:center;width:100%;cursor:default;user-select:none;">
+			<h3>&nbsp;Registration</h3>
+		    
+			{%for d in departments%}
+            <hr/>
+		    <span style="cursor:pointer;font-size:14px;" data-toggle="collapse" data-target="#demo{{d.code}}" class="badge badge-inverse">&nbsp;{{d.name}}</span></li>
+		    <div id="demo{{d.code}}" style="text-align:center" class="collapse">
+		    	<br/>
+			 	{%for c in d.offerings.all%}
+                    <strong>{{c.code}}:</strong>&nbsp;
+			 	    {%for s in c.sections.all%}
+                        {%if s.year == current_year and s.semester == current_semester%}
+			            &nbsp;<bok id="S{{s.id}}" {%if s not in mysecs%}draggable="true"{%endif%} ondragend="demap(event);asyncmapper(true);" ondragstart="drag(event,'{{s.id}}');"  style="cursor:pointer;" class="btn {%if s in mysecs%}btn-info{%else%}{%if s.current == s.max%}btn-danger{%else%}btn-success{%endif%}{%endif%} {{s.courseCode}}" alt="{{s.courseCode}}" title="Enrolled:{{s.current}}/{{s.max}}">S{{s.secNo}} <i id="S{{s.id}}remove" class="icon-remove icon-white {{s.courseCode}}-remove" alt="{{s.courseCode}}" style="display:{%if s in mysecs%}default{%else%}none{%endif%};top:25%;" onclick="dropSection(event,{{s.id}});"></i></bok>
+				        {%endif%}
+                   {%endfor%}
+                    <br/>
+                    <p style="font-size:10px;">{{c.name}}</p>
+				{%endfor%}
+			</div>
+			
+
+			{%endfor%}          </div><!--/.well -->
+		</br>
+		
+		<div id="cInfo" class="well sidebar-nav" style="display:none;">
+		
+		</div>
+		
+        </div><!--/span-->
+        <div  class="span9">
+          <div class="hero-unit" style="position:fixed;top:60px;left:350px;width:63%;">
+			    <h2>Your Week!</h2>&nbsp;&nbsp;&nbsp;
+           <div id="divInfo" class="alert alert-info" style="display:none;"></div>
+          </h2>
+			</br>
+			 <table ondragover="event.preventDefault();return false;" ondragenter="remap(event);"  ondrop="addSection(event);" class="table table-bordered" style="cursor:default;text-align:center;">
+				<thead style="background-color:#e5e5e5;">
+					<tr>
+						<td></td>
+						<td>Monday</td>
+						<td>Tuesday</td>
+						<td>Wednesday</td>
+						<td>Thursday</td>
+						<td>Friday</td>
+						<td>Saturday</td>
+						<td>Sunday</td>
+					</tr>	
+				</thead>
+			    <tbody>
+				
+				{%for i in height%}
+					<tr>
+						{%for j in width%}
+							{%if j == 0%}
+								<td style="background-color:#e5e5e5;">{{i|add:"8"}}:40</td>
+							{%else%}
+								<td id="cell{{i}}{{j}}"></td>
+							{%endif%}
+						{%endfor%}
+					</tr>
+				{%endfor%}
+				
+				</tbody>
+				
+			    </table>
+          </div>
+
+      <hr>
+
+    </div><!--/.fluid-container-->
+
+    <!-- Le javascript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script src="/index/js/jquery.js"></script>
+    <script src="/index/js/bootstrap-transition.js"></script>
+    <script src="/index/js/bootstrap-alert.js"></script>
+    <script src="/index/js/bootstrap-modal.js"></script>
+    <script src="/index/js/bootstrap-dropdown.js"></script>
+    <script src="/index/js/bootstrap-scrollspy.js"></script>
+    <script src="/index/js/bootstrap-tab.js"></script>
+    <script src="/index/js/bootstrap-tooltip.js"></script>
+    <script src="/index/js/bootstrap-popover.js"></script>
+    <script src="/index/js/bootstrap-button.js"></script>
+    <script src="/index/js/bootstrap-collapse.js"></script>
+    <script src="/index/js/bootstrap-carousel.js"></script>
+    <script src="/index/js/bootstrap-typeahead.js"></script>
+
+  
+
+</body></html>

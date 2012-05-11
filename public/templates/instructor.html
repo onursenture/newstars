@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <meta charset="utf-8">
+    <title>NewStars</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <!-- Le styles -->
+    <link href="css/bootstrap.css" rel="stylesheet">
+    <style type="text/css">
+      td {
+                white-space: pre-wrap; /* css-3 */
+                white-space: -moz-pre-wrap !important; /* Mozilla, since 1999 */
+                white-space: -pre-wrap; /* Opera 4-6 */
+                white-space: -o-pre-wrap; /* Opera 7 */
+                word-wrap: break-word; /* Internet Explorer 5.5+ */
+      }
+      tr:hover {
+      }
+      body {
+        padding-top: 60px;
+        padding-bottom: 40px;
+      }
+              .sidebar-nav {
+                padding: 9px 0;
+              }
+            </style>
+            <link href="css/bootstrap-responsive.css" rel="stylesheet">
+
+            <!-- Le HTML5 shim, for IE6-8 support of HTML5 elements -->
+            <!--[if lt IE 9]>
+              <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+            <![endif]-->
+
+            <!-- Le fav and touch icons -->
+            <link rel="shortcut icon" href="http://twitter.github.com/bootstrap/assets/ico/favicon.ico">
+            <link rel="apple-touch-icon-precomposed" sizes="144x144" href="http://twitter.github.com/bootstrap/assets/ico/apple-touch-icon-144-precomposed.png">
+            <link rel="apple-touch-icon-precomposed" sizes="114x114" href="http://twitter.github.com/bootstrap/assets/ico/apple-touch-icon-114-precomposed.png">
+            <link rel="apple-touch-icon-precomposed" sizes="72x72" href="http://twitter.github.com/bootstrap/assets/ico/apple-touch-icon-72-precomposed.png">
+            <link rel="apple-touch-icon-precomposed" href="http://twitter.github.com/bootstrap/assets/ico/apple-touch-icon-57-precomposed.png">
+
+            <script type="text/javascript">
+
+            colors = ['#b1ddf3','#facc30','#e3675c','#c2d985','#ffde89','#ea9135'];
+            var students;
+            var crs;
+
+            function show_course(cComp)
+            {
+                $('#cInfo').fadeOut('normal');
+                course = $('#courseCode');
+                cName = $('#courseName');
+                se_info = cComp.split(':');
+                $.ajax({url:'/index/course/'+se_info[0]+'/'+se_info[1]+'/',method:'get',complete:
+                function(data){
+                    m = $.parseJSON(data.responseText);
+                    if(m!=null){
+                           course.html('&nbsp;'+m.cCode);
+                           cName.html('&nbsp;'+m.cName);
+                           students = m.students;
+                           crs = m.cCode;
+                           $('#cInfo').fadeIn('normal');
+                    }
+                }});
+            }
+	
+    function mapper()
+	{
+	  var i = 0;
+	  var c = 0
+	  {% for k, v in sections.iteritems %}
+		{% for u in v%}
+	    for(i=0;i<{{u.duration}};i++)
+	    {
+          se_info = '{{k}}'.split(':');
+          full = $('#cell'+((parseInt({{u.hour}})+i-1)+'{{u.day}}')); 
+	      full.html(se_info[0]+'<span style="font-size:10px;"> @ {{u.room}}</span>');
+	      full.css({'background-color':colors[c]});
+          full.click(function(e){show_course('{{k}}');});
+	    }
+		{% endfor %}
+		c++;
+	  {% endfor %}
+
+	}
+
+    function listStudentsGrade(){
+        body=$('#grademodal-body');
+        body.html('')
+        for(i=0;i<students.length;i++)
+        {
+            body.append('<h4>'+students[i].fields.name+' '+students[i].fields.surname+'&nbsp;</h4><h6>'+students[i].pk+'&nbsp;</h><form action="" class="well form-inline"><input type="text" class="input-small" id="gtype'+i+'"  placeholder="Type"> <input type="text" class="input-small" id="ggrade'+i+'" placeholder="Grade"><input type="text" class="input-small" id="gnote'+i+'"  placeholder="Comment"><button type="button" onclick="$.post(\'/index/put:grade/\',{ type:$(\'#gtype'+i+'\').attr(\'value\'), grade:$(\'#ggrade'+i+'\').attr(\'value\'), notes:$(\'#gnote'+i+'\').attr(\'value\'), ID:'+students[i].pk+', code:\''+crs+'\'})" class="btn">Submit</button></form><br/>');
+        }
+
+    }
+    
+    function listStudentsAttendance(){
+        body=$('#attendmodal-body');
+        body.html('')
+        for(i=0;i<students.length;i++)
+        {
+            body.append('<h4>'+students[i].fields.name+' '+students[i].fields.surname+'&nbsp;</h4><h6>'+students[i].pk+'&nbsp;</h><form class="well form-inline"><input type="text" class="input-small" id="aweek'+i+'" placeholder="Week"><input type="text" class="input-small" id="aattend'+i+'" placeholder="Attend"><button type="button" onclick="$.post(\'/index/put:attend/\',{ attend:$(\'#aattend'+i+'\').attr(\'value\'), week:$(\'#aweek'+i+'\').attr(\'value\'), ID:'+students[i].pk+', code:\''+crs+'\'})" class="btn">Submit</button></form><br/>');
+        }
+
+    }
+  </script>
+	
+  </head>
+
+  <body onload="mapper();">
+    <div class="navbar navbar-fixed-top">
+      <div class="navbar-inner">
+        <div class="container-fluid">
+          <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </a>
+          <a class="brand" href="#">NewStars Instructor</a>
+          <div class="btn-group pull-right">
+            <a class="btn dropdown-toggle" data-toggle="dropdown" href="#">
+              <i class="icon-user"></i> {{degree}}&nbsp;{{instructor.name}}&nbsp;{{instructor.surname}}
+              <span class="caret"></span>
+            </a>
+            <ul class="dropdown-menu">
+              <!--<li><a href="#">Profile</a></li>
+              <li class="divider"></li>-->
+              <li><a href="/index/logout/">Sign Out</a></li>
+            </ul>
+          </div>
+          <div class="nav-collapse">
+            <ul class="nav">
+              <li class="active"><a href="/index/">Home</a></li>
+              <li><a href="/index/advised/">Advised Students</a></li>
+            </ul>
+          </div><!--/.nav-collapse -->
+        </div>
+      </div>
+    </div>
+
+    <div class="container-fluid">
+      <div class="row-fluid">
+        <div class="span3">
+          <div class="well sidebar-nav">
+			<h3>&nbsp;Instructor Info</h3>
+		    <table class="table">
+		    <tbody>
+		    <tr>
+		    <td><strong>Name:</strong></td>
+		    <td>{{instructor.name}}&nbsp;{{instructor.surname}}</td>
+		    </tr>
+		    <tr>
+		    <td><strong>ID:</strong></td>
+		    <td>{{instructor.ID}}</td>
+		    </tr>
+		    <tr>
+		    <td><strong>Department:</strong></td>
+		    <td>{{instructor.affiliation.code}}</td>
+		    </tr>
+		    <tr>
+		    <td><strong>Status:</strong></td>
+		    <td>{{instructor.status|upper}}</td>
+		    </tr>
+		    </tbody>
+		    </table>
+          </div><!--/.well -->
+		</br>
+		<div id="cInfo" class="well sidebar-nav" style="display:none;">
+		
+	    	<h3 id="courseCode"></h3>
+	    	<h6 id="courseName"></h6>
+            <br/>
+		
+		    &nbsp;<button class="btn btn-primary" data-toggle="modal" href="#grademodal" onclick="listStudentsGrade();">
+		        Add Grade
+		    </button>
+		
+		    &nbsp;<button class="btn btn-primary" data-toggle="modal" href="#attendmodal" onclick="listStudentsAttendance();">
+		        Add Attendance
+		    </button>
+				
+		</div>
+
+        </div><!--/span-->
+        <div class="span9">
+          <div class="hero-unit">
+			</br>
+			 <table class="table table-bordered" style="cursor:default;text-align:center;">
+				<thead style="background-color:#e5e5e5;">
+					<tr>
+						<td></td>
+						<td>Monday</td>
+						<td>Tuesday</td>
+						<td>Wednesday</td>
+						<td>Thursday</td>
+						<td>Friday</td>
+						<td>Saturday</td>
+						<td>Sunday</td>
+					</tr>	
+				</thead>
+			    <tbody>
+				
+				{%for i in height%}
+					<tr>
+						{%for j in width%}
+							{%if j == 0%}
+								<td style="background-color:#e5e5e5;">{{i|add:"8"}}:40</td>
+							{%else%}
+								<td id="cell{{i}}{{j}}"></td>
+							{%endif%}
+						{%endfor%}
+					</tr>
+				{%endfor%}
+				
+				</tbody>
+				
+			    </table>
+          </div>
+
+      <hr>
+
+	<div class="modal hide fade" id="grademodal">
+    <div class="modal-header">
+    <button class="close" data-dismiss="modal">×</button>
+    <h3>Add Grade</h3>
+    </div>
+    <div class="modal-body" id="grademodal-body">
+    </div>
+    <div class="modal-footer">
+    <a class="btn" data-dismiss="modal">Close</a>
+    <a href="#" class="btn btn-primary">Save changes</a>
+    </div>
+    </div>
+
+	<div class="modal hide fade" id="attendmodal">
+    <div class="modal-header">
+    <button class="close" data-dismiss="modal">×</button>
+    <h3>Add Attendance</h3>
+    </div>
+    <div class="modal-body" id="attendmodal-body">
+    </div>
+    <div class="modal-footer">
+    <a class="btn" data-dismiss="modal">Close</a>
+    <a href="#" class="btn btn-primary">Save changes</a>
+    </div>
+    </div>
+
+      <footer>
+        <p>© Bilkent University 2012</p>
+      </footer>
+
+    </div><!--/.fluid-container-->
+
+    <!-- Le javascript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script src="js/jquery.js"></script>
+    <script src="js/bootstrap-transition.js"></script>
+    <script src="js/bootstrap-alert.js"></script>
+    <script src="js/bootstrap-modal.js"></script>
+    <script src="js/bootstrap-dropdown.js"></script>
+    <script src="js/bootstrap-scrollspy.js"></script>
+    <script src="js/bootstrap-tab.js"></script>
+    <script src="js/bootstrap-tooltip.js"></script>
+    <script src="js/bootstrap-popover.js"></script>
+    <script src="js/bootstrap-button.js"></script>
+    <script src="js/bootstrap-collapse.js"></script>
+    <script src="js/bootstrap-carousel.js"></script>
+    <script src="js/bootstrap-typeahead.js"></script>
+
+  
+
+</body></html>
